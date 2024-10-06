@@ -178,10 +178,10 @@ from langchain.memory import StreamlitChatMessageHistory
 
 def main():
     st.set_page_config(
-    page_title="Sogang_AIMBA_Chat",
+    page_title="서강대학교 AIMBA Chat",
     page_icon=":books:")
 
-    st.title("_\uc11c\uac15\ub300\ud559\uad50 AI MBA :red[AI Chatbot]_ :books:")
+    st.title("_서강대학교 AI MBA :red[AI Chatbot]_ :books:")
 
     if "conversation" not in st.session_state:
         st.session_state.conversation = None
@@ -193,24 +193,24 @@ def main():
         st.session_state.processComplete = False
 
     with st.sidebar:
-        uploaded_files =  st.file_uploader("Upload your file",type=['pdf','docx'],accept_multiple_files=True)
-        openai_api_key = st.text_input("OpenAI API Key", key="chatbot_api_key", type="password")
-        process = st.button("Process")
+        uploaded_files =  st.file_uploader("파일을 업로드하세요", type=['pdf', 'docx'], accept_multiple_files=True)
+        openai_api_key = st.text_input("OpenAI API 키", key="chatbot_api_key", type="password")
+        process = st.button("처리하기")
     if process:
         if not openai_api_key:
-            st.info("Please add your OpenAI API key to continue.")
+            st.info("계속하려면 OpenAI API 키를 추가하세요.")
             st.stop()
         files_text = get_text(uploaded_files)
         text_chunks = get_text_chunks(files_text)
         vectorstore = get_vectorstore(text_chunks)
      
-        st.session_state.conversation = get_conversation_chain(vectorstore,openai_api_key) 
+        st.session_state.conversation = get_conversation_chain(vectorstore, openai_api_key)
 
         st.session_state.processComplete = True
 
     if 'messages' not in st.session_state:
-        st.session_state['messages'] = [{"role": "assistant", 
-                                        "content": "\uc548\ub155\ud558\uc138\uc694! \uc11c\uac15\ub300\ud559\uad50 AI MBA \uacfc\uc815\uc5d0 \ub300\ud574\uc11c \uad81\uae08\ud558\uc2e0 \uac83\uc774 \uc788\uc73c\uba74 \uc5b4\ub290\ubc88\uc5d0\ub4e0 \ubb38\uc790\ubcf4\ub0b4\uc8fc\uc138\uc694!"}]
+        st.session_state['messages'] = [{"role": "assistant",
+                                        "content": "안녕하세요! 서강대학교 AI MBA 과정에 대해서 궁금하신 것이 있으면 언제든 물어봐주세요!"}]
 
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
@@ -219,7 +219,7 @@ def main():
     history = StreamlitChatMessageHistory(key="chat_messages")
 
     # Chat logic
-    if query := st.chat_input("\uc9c8\ubb38\uc744 \uc785\ub825\ud574\uc8fc\uc138\uc694."):
+    if query := st.chat_input("질문을 입력해주세요."):
         st.session_state.messages.append({"role": "user", "content": query})
 
         with st.chat_message("user"):
@@ -228,7 +228,7 @@ def main():
         with st.chat_message("assistant"):
             chain = st.session_state.conversation
 
-            with st.spinner("Thinking..."):
+            with st.spinner("생각 중..."):
                 try:
                     result = chain({"question": query, "chat_history": st.session_state.chat_history})
                     response = result['answer']
@@ -245,12 +245,12 @@ def main():
                     
                     # Display source documents if available
                     if source_documents:
-                        with st.expander("\ucc38\uace0 \ubb38\uc11c \ud655\uc778"):
+                        with st.expander("참고 문서 확인"):
                             for doc in source_documents:
-                                st.markdown(f"Source: {doc.metadata['source']}", help=doc.page_content)
+                                st.markdown(f"출처: {doc.metadata['source']}", help=doc.page_content)
                 except Exception as e:
-                    logger.error(f"Error during conversation: {e}")
-                    st.error("An error occurred. Please check the logs for more details.")
+                    logger.error(f"대화 중 오류 발생: {e}")
+                    st.error("오류가 발생했습니다. 자세한 내용은 로그를 확인하세요.")
 
 # Add assistant message to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
@@ -281,7 +281,6 @@ def get_text(docs):
         doc_list.extend(documents)
     return doc_list
 
-
 def get_text_chunks(text):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=900,
@@ -290,7 +289,6 @@ def get_text_chunks(text):
     )
     chunks = text_splitter.split_documents(text)
     return chunks
-
 
 def get_vectorstore(text_chunks):
     embeddings = HuggingFaceEmbeddings(
@@ -301,19 +299,18 @@ def get_vectorstore(text_chunks):
     vectordb = FAISS.from_documents(text_chunks, embeddings)
     return vectordb
 
-def get_conversation_chain(vectorstore,openai_api_key):
-    llm = ChatOpenAI(openai_api_key=openai_api_key, model_name = 'gpt-3.5-turbo',temperature=0)
+def get_conversation_chain(vectorstore, openai_api_key):
+    llm = ChatOpenAI(openai_api_key=openai_api_key, model_name='gpt-3.5-turbo', temperature=0)
     conversation_chain = ConversationalRetrievalChain.from_llm(
-            llm=llm, 
-            chain_type="stuff", 
-            retriever=vectorstore.as_retriever(search_type = 'mmr', verbose = True), 
+            llm=llm,
+            chain_type="stuff",
+            retriever=vectorstore.as_retriever(search_type='mmr', verbose=True),
             memory=ConversationBufferMemory(memory_key='chat_history', return_messages=True, output_key='answer'),
             return_source_documents=True,
-            verbose = True
+            verbose=True
         )
 
     return conversation_chain
-
 
 if __name__ == '__main__':
     main()
