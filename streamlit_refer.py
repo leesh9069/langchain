@@ -206,12 +206,12 @@ def main():
         text_chunks = get_text_chunks(files_text)
         vectorstore = get_vectorstore(text_chunks)
      
-        st.session_state.conversation = get_conversation_chain(vectorstore, openai_api_key) 
+        st.session_state.conversation = get_conversation_chain(vectorstore, openai_api_key)
 
         st.session_state.processComplete = True
 
     if 'messages' not in st.session_state:
-        st.session_state['messages'] = [{"role": "assistant", 
+        st.session_state['messages'] = [{"role": "assistant",
                                         "content": "안녕하세요! 서강대학교 AI MBA 과정에 대해서 궁금하신 것이 있으면 언제든 물어봐주세요!"}]
 
     for message in st.session_state.messages:
@@ -226,6 +226,8 @@ def main():
 
         with st.chat_message("user"):
             st.markdown(query)
+
+        response = "죄송합니다. 답변을 생성할 수 없습니다."  # 기본 응답 초기화
 
         with st.chat_message("assistant"):
             chain = st.session_state.conversation
@@ -252,7 +254,8 @@ def main():
                                 st.markdown(f"출처: {doc.metadata['source']}", help=doc.page_content)
                 except Exception as e:
                     logger.error(f"대화 중 오류 발생: {e}")
-                    st.error("오류가 발생했습니다. 자세한 내용은 로그를 확인하세요.")
+                    response = "오류가 발생했습니다. 자세한 내용은 로그를 확인하세요."
+                    st.error(response)
 
 # Add assistant message to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
@@ -305,9 +308,9 @@ def get_vectorstore(text_chunks):
 def get_conversation_chain(vectorstore, openai_api_key):
     llm = ChatOpenAI(openai_api_key=openai_api_key, model_name='gpt-3.5-turbo', temperature=0)
     conversation_chain = ConversationalRetrievalChain.from_llm(
-            llm=llm, 
-            chain_type="stuff", 
-            retriever=vectorstore.as_retriever(search_type='mmr', verbose=True), 
+            llm=llm,
+            chain_type="stuff",
+            retriever=vectorstore.as_retriever(search_type='mmr', verbose=True),
             memory=ConversationBufferMemory(memory_key='chat_history', return_messages=True, output_key='answer'),
             return_source_documents=True,
             verbose=True
