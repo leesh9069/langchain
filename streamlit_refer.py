@@ -233,29 +233,30 @@ def main():
             chain = st.session_state.conversation
 
             with st.spinner("생각 중..."):
-                try:
-                    result = chain({"question": query, "chat_history": st.session_state.chat_history})
-                    response = result['answer']
-                    source_documents = result.get('source_documents', [])
-                    
-                    # Add response to the messages
-                    st.session_state.messages.append({"role": "assistant", "content": response})
-                    
-                    # Update chat history
-                    st.session_state.chat_history.append(("user", query))
-                    st.session_state.chat_history.append(("assistant", response))
-                    
-                    st.markdown(response)
-                    
-                    # Display source documents if available
-                    if source_documents:
-                        with st.expander("참고 문서 확인"):
-                            for doc in source_documents:
-                                st.markdown(f"출처: {doc.metadata['source']}", help=doc.page_content)
-                except Exception as e:
-                    logger.error(f"대화 중 오류 발생: {e}")
-                    response = "오류가 발생했습니다. 자세한 내용은 로그를 확인하세요."
-                    st.error(response)
+                # try:
+                result = chain({"question": query, "chat_history": st.session_state.chat_history})
+                response = result['answer']
+                source_documents = result.get('source_documents', [])
+                
+                # Add response to the messages
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                
+                # Update chat history
+                st.session_state.chat_history.append(("user", query))
+                st.session_state.chat_history.append(("assistant", response))
+                
+                st.markdown(response)
+                
+                # Display source documents if available
+                if source_documents:
+                    with st.expander("참고 문서 확인"):
+                        for doc in source_documents:
+                            st.markdown(f"출처: {doc.metadata['source']}", help=doc.page_content)
+                # except Exception as e:
+                #     logger.error(f"대화 중 오류 발생: {e}")
+                #     response = "오류가 발생했습니다. 자세한 내용은 로그를 확인하세요."
+                #     st.error(response)
+
 
 # Add assistant message to chat history
         st.session_state.messages.append({"role": "assistant", "content": response})
