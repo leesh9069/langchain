@@ -71,7 +71,7 @@ def main():
         with st.chat_message("assistant"):
             chain = st.session_state.conversation
 
-            with st.spinner("답변을 생성중입니다..."):
+            with st.spinner("Thinking..."):
                 result = chain({"question": query})
                 with get_openai_callback() as cb:
                     st.session_state.chat_history = result['chat_history']
