@@ -158,6 +158,8 @@
 import streamlit as st
 import tiktoken
 from loguru import logger
+import tempfile
+import os
 
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chat_models import ChatOpenAI
@@ -193,7 +195,7 @@ def main():
         st.session_state.processComplete = False
 
     with st.sidebar:
-        uploaded_files =  st.file_uploader("파일을 업로드하세요", type=['pdf', 'docx'], accept_multiple_files=True)
+        uploaded_files = st.file_uploader("파일을 업로드하세요", type=['pdf', 'docx'], accept_multiple_files=True)
         openai_api_key = st.text_input("OpenAI API 키", key="chatbot_api_key", type="password")
         process = st.button("처리하기")
     if process:
@@ -204,12 +206,12 @@ def main():
         text_chunks = get_text_chunks(files_text)
         vectorstore = get_vectorstore(text_chunks)
      
-        st.session_state.conversation = get_conversation_chain(vectorstore, openai_api_key)
+        st.session_state.conversation = get_conversation_chain(vectorstore, openai_api_key) 
 
         st.session_state.processComplete = True
 
     if 'messages' not in st.session_state:
-        st.session_state['messages'] = [{"role": "assistant",
+        st.session_state['messages'] = [{"role": "assistant", 
                                         "content": "안녕하세요! 서강대학교 AI MBA 과정에 대해서 궁금하신 것이 있으면 언제든 물어봐주세요!"}]
 
     for message in st.session_state.messages:
@@ -264,9 +266,9 @@ def get_text(docs):
     doc_list = []
     
     for doc in docs:
-        file_name = doc.name  # doc 객체의 이름을 파일 이름으로 사용
-        with open(file_name, "wb") as file:  # 파일을 doc.name으로 저장
-            file.write(doc.getvalue())
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+            tmp_file.write(doc.getvalue())
+            file_name = tmp_file.name
             logger.info(f"Uploaded {file_name}")
         if '.pdf' in doc.name:
             loader = PyPDFLoader(file_name)
@@ -277,8 +279,9 @@ def get_text(docs):
         elif '.pptx' in doc.name:
             loader = UnstructuredPowerPointLoader(file_name)
             documents = loader.load_and_split()
-
+        
         doc_list.extend(documents)
+        os.remove(file_name)  # 임시 파일 삭제
     return doc_list
 
 def get_text_chunks(text):
@@ -302,9 +305,9 @@ def get_vectorstore(text_chunks):
 def get_conversation_chain(vectorstore, openai_api_key):
     llm = ChatOpenAI(openai_api_key=openai_api_key, model_name='gpt-3.5-turbo', temperature=0)
     conversation_chain = ConversationalRetrievalChain.from_llm(
-            llm=llm,
-            chain_type="stuff",
-            retriever=vectorstore.as_retriever(search_type='mmr', verbose=True),
+            llm=llm, 
+            chain_type="stuff", 
+            retriever=vectorstore.as_retriever(search_type='mmr', verbose=True), 
             memory=ConversationBufferMemory(memory_key='chat_history', return_messages=True, output_key='answer'),
             return_source_documents=True,
             verbose=True
