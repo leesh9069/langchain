@@ -45,9 +45,9 @@ def main():
             st.stop()
         files_text = get_text(uploaded_files)
         text_chunks = get_text_chunks(files_text)
-        vetorestore = get_vectorstore(text_chunks)
+        vectorstore = get_vectorstore(text_chunks)
      
-        st.session_state.conversation = get_conversation_chain(vetorestore,openai_api_key) 
+        st.session_state.conversation = get_conversation_chain(vectorstore,openai_api_key) 
 
         st.session_state.processComplete = True
 
@@ -136,12 +136,12 @@ def get_vectorstore(text_chunks):
     vectordb = FAISS.from_documents(text_chunks, embeddings)
     return vectordb
 
-def get_conversation_chain(vetorestore,openai_api_key):
+def get_conversation_chain(vectorstore,openai_api_key):
     llm = ChatOpenAI(openai_api_key=openai_api_key, model_name = 'gpt-3.5-turbo',temperature=0)
     conversation_chain = ConversationalRetrievalChain.from_llm(
             llm=llm, 
             chain_type="stuff", 
-            retriever=vetorestore.as_retriever(search_type = 'mmr', vervose = True), 
+            retriever=vectorstore.as_retriever(search_type = 'mmr', verbose = True), 
             memory=ConversationBufferMemory(memory_key='chat_history', return_messages=True, output_key='answer'),
             get_chat_history=lambda h: h,
             return_source_documents=True,
